@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
+import requests
 
 # 環境変数の読み込み
 load_dotenv()
@@ -15,6 +16,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # セッション用のシークレットキー
 
+
 # 🔹 ホームページ (ログインかサインアップを選ぶ画面)
 @app.route("/", methods=["GET"])
 def home():
@@ -27,20 +29,10 @@ def signup():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-
-        # フィールドの検証
-        if not email or not password:
-            return render_template("signup.html", error="メールアドレスとパスワードを入力してください。")
-
         try:
             # サインアップを実行
-            user = supabase.auth.sign_up({
-                "email": email,
-                "password": password
-            })
+            user = supabase.auth.sign_up({"email": email, "password": password})
             print(f"サインアップ成功: {user}")
-
-            # サインアップ後、確認リンクが送信されたことを表示
             return render_template("signup.html", success=f"{email}に確認リンクが送信されました。")
         except Exception as e:
             print(f"サインアップ失敗: {e}")
@@ -72,12 +64,12 @@ def login():
 @app.route("/dashboard")
 def dashboard():
     if 'user_id' in session:
-        return f"ログイン成功！ユーザーID: {session['user_id']}"
+        return render_template("dashboard.html", user_id=session['user_id'])
     else:
         return redirect(url_for('login'))
 
 
-# 🔹 ログアウト
+# 🔹 ログアウト処理
 @app.route("/logout")
 def logout():
     session.clear()
