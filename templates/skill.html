@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スキルシート作成</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7fafc;
+        color: #1a202c;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .container {
+        background-color: #fff;
+        padding: 2rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        width: 100%;
+        max-width: 800px;
+        box-sizing: border-box;
+    }
+
+    h1 {
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-size: 2.25rem;
+        font-weight: 600;
+    }
+
+    form {
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+        outline: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    textarea:focus,
+    select:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    button[type="submit"] {
+        padding: 0.8rem 1.6rem;
+        background-color: #4299e1;
+        color: #fff;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s ease;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #3182ce;
+    }
+
+    .section {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .section-title {
+        color: #2d3748;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0.25rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 1rem;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group textarea,
+    select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+        outline: none;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group input[type="date"]:focus,
+    .form-group textarea:focus,
+    select:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .language-select-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .language-select-group label {
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 1rem;
+        display: block;
+    }
+
+    .language-select-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .language-select-group select:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+
+    /* 追記部分：選択肢の説明 */
+    .select-description {
+        font-size: 0.8rem;
+        color: #718096;
+        margin-top: 0.25rem;
+        text-align: left;
+        width: 100%;
+    }
+
+
+    @media (max-width: 640px) {
+        .container {
+            padding: 1.5rem;
+        }
+
+        form {
+            gap: 0.75rem;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        textarea,
+        select {
+            max-width: 100%;
+        }
+
+        button[type="submit"] {
+            max-width: 100%;
+        }
+
+        .language-select-group {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>スキルシート作成</h1>
+        <form method="post" action="/create-skillsheet">
+            <section class="section">
+                <h2 class="section-title">基本情報</h2>
+                <div class="form-group">
+                    <label for="name">氏名:</label>
+                    <input type="text" id="name" name="name" placeholder="氏名" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender">性別:</label>
+                    <select id="gender" name="gender" required>
+                        <option value="男性">男性</option>
+                        <option value="女性">女性</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="birthday">生年月日:</label>
+                    <input type="date" id="birthday" name="birthday" required>
+                </div>
+                <div class="form-group">
+                    <label for="final_education">最終学歴:</label>
+                    <input type="text" id="final_education" name="final_education" placeholder="最終学歴" required>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">01.プログラミング言語</h2>
+                <div class="language-select-group">
+                    <div class="form-group">
+                        <label for="language_python">Python:</label>
+                        <select id="language_python" name="language_python">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                     </div>
+                    <div  class="form-group">
+                        <label for="language_ruby">Ruby:</label>
+                        <select id="language_ruby" name="language_ruby">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div  class="form-group">
+                        <label for="language_js">JavaScript:</label>
+                        <select id="language_js" name="language_js">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_shell">Shell:</label>
+                        <select id="language_shell" name="language_shell">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_c">C:</label>
+                        <select id="language_c" name="language_c">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_cpp">C++:</label>
+                        <select id="language_cpp" name="language_cpp">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_csharp">C#:</label>
+                        <select id="language_csharp" name="language_csharp">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_java">Java:</label>
+                        <select id="language_java" name="language_java">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_php">PHP:</label>
+                        <select id="language_php" name="language_php">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_go">Go:</label>
+                        <select id="language_go" name="language_go">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_html">HTML:</label>
+                        <select id="language_html" name="language_html">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_css">CSS:</label>
+                        <select id="language_css" name="language_css">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_swift">Swift:</label>
+                        <select id="language_swift" name="language_swift">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_kotlin">Kotlin:</label>
+                        <select id="language_kotlin" name="language_kotlin">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language_vba">VBA:</label>
+                        <select id="language_vba" name="language_vba">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">02.フレームワーク</h2>
+                <div class="language-select-group">
+                    <div class="form-group">
+                        <label for="framework_ruby_on_rails">Ruby on Rails:</label>
+                        <select id="framework_ruby_on_rails" name="framework_ruby_on_rails">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_django">Django:</label>
+                        <select id="framework_django" name="framework_django">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_flask">Flask:</label>
+                        <select id="framework_flask" name="framework_flask">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_laravel">Laravel:</label>
+                        <select id="framework_laravel" name="framework_laravel">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_symfony">Symfony:</label>
+                        <select id="framework_symfony" name="framework_symfony">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="framework_cakephp">CakePHP:</label>
+                        <select id="framework_cakephp" name="framework_cakephp">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_php">PHP:</label>
+                        <select id="framework_php" name="framework_php">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_nextjs">Next.js:</label>
+                        <select id="framework_nextjs" name="framework_nextjs">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_nuxtjs">Nuxt.js:</label>
+                        <select id="framework_nuxtjs" name="framework_nuxtjs">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="framework_vuejs">Vue.js:</label>
+                        <select id="framework_vuejs" name="framework_vuejs">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_springboot">Spring Boot:</label>
+                        <select id="framework_springboot" name="framework_springboot">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_bottle">Bottle:</label>
+                        <select id="framework_bottle" name="framework_bottle">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="framework_react">React:</label>
+                        <select id="framework_react" name="framework_react">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">03.開発環境</h2>
+                <div class="language-select-group">
+                    <div class="form-group">
+                        <label for="env_vscode">VSCode:</label>
+                        <select id="env_vscode" name="env_vscode">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_eclipse">Eclipse:</label>
+                        <select id="env_eclipse" name="env_eclipse">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_pycharm">PyCharm:</label>
+                        <select id="env_pycharm" name="env_pycharm">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_jupyter_notebook">Jupyter Notebook:</label>
+                        <select id="env_jupyter_notebook" name="env_jupyter_notebook">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_android_studio">Android Studio:</label>
+                        <select id="env_android_studio" name="env_android_studio">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="env_atom">Atom:</label>
+                        <select id="env_atom" name="env_atom">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_xcode">Xcode:</label>
+                        <select id="env_xcode" name="env_xcode">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_webstorm">WebStorm:</label>
+                        <select id="env_webstorm" name="env_webstorm">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="env_netbeans">NetBeans:</label>
+                        <select id="env_netbeans" name="env_netbeans">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="env_visual_studio">Visual Studio:</label>
+                        <select id="env_visual_studio" name="env_visual_studio">
+                            <option value="">-</option>
+                            <option value="S">S (上級、教育可能)</option>
+                            <option value="A">A (中級、1人称対応可能)</option>
+                            <option value="B">B (業務経験あり)</option>
+                            <option value="C">C (知識のみ、研修レベル)</option>
+                            <option value="D">D (経験なし)</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+             <section class="section">
+                <h2 class="section-title">スキル2</h2>
+                <div class="form-group">
+                    <label for="skills2">スキル:</label>
+                    <textarea id="skills2" name="skills2" placeholder="得意なスキルを記述してください (例: JavaScript, Python, AWS)" required></textarea>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">職務経歴</h2>
+                <div class="form-group">
+                    <label for="experience">職務経歴:</label>
+                    <textarea id="experience" name="experience" placeholder="職務経歴を記述してください" required></textarea>
+                </div>
+            </section>
+
+            <button type="submit">スキルシートを作成</button>
+        </form>
+    </div>
+</body>
+</html>
