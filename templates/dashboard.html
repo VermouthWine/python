@@ -5,6 +5,8 @@
 </head>
 <body>
     <h1>ログイン成功！ユーザーID: {{ user_id }}</h1>
+    <a href="{{ url_for('skillsheet_input') }}">スキルページへ</a>
+
     <a href="{{ url_for('logout') }}">ログアウト</a>
 </body>
 </html>

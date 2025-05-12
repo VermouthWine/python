@@ -68,6 +68,14 @@ def dashboard():
     else:
         return redirect(url_for('login'))
 
+# 🔹 スキルシート作成ページ
+@app.route("/skillsheet_input")
+def skill():
+    return render_template("skillsheet_input.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
 
 # 🔹 ログアウト処理
 @app.route("/logout")
