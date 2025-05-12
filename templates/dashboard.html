@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
+    <meta charset="UTF-8">
     <title>Dashboard</title>
 </head>
 <body>
-    <h1>ログイン成功！ユーザーID: {{ user_id }}</h1>
-    <a href="{{ url_for('skillsheet_input') }}">スキルページへ</a>
+    <h1>ダッシュボード</h1>
+    <p>ログイン成功！</p>
+    <p>メールアドレス: {{ user_email }}</p>
 
-    <a href="{{ url_for('logout') }}">ログアウト</a>
+    <form action="{{ url_for('logout') }}" method="post">
+        <button type="submit">ログアウト</button>
+    </form>
 </body>
 </html>

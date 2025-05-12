@@ -33,7 +33,8 @@ def signup():
             # サインアップを実行
             user = supabase.auth.sign_up({"email": email, "password": password})
             print(f"サインアップ成功: {user}")
-            return render_template("signup.html", success=f"{email}に確認リンクが送信されました。")
+            # 確認リンクの送信完了メッセージを表示
+            return render_template("signup.html", success=f"{email} に確認リンクが送信されました。")
         except Exception as e:
             print(f"サインアップ失敗: {e}")
             return render_template("signup.html", error="サインアップに失敗しました。")
@@ -51,9 +52,14 @@ def login():
                 "email": email,
                 "password": password
             })
-            session['user_id'] = user.user.id
-            print(f"ログイン成功！ユーザーID: {user.user.id}")
-            return redirect(url_for('dashboard'))
+            if user.user.email_confirmed_at:
+                # セッションにユーザーIDとメールアドレスを保存
+                session['user_id'] = user.user.id
+                session['user_email'] = user.user.email
+                print(f"ログイン成功！ユーザーID: {email}")
+                return redirect(url_for('dashboard'))
+            else:
+                return render_template("login.html", error="メールの確認が完了していません。")
         except Exception as e:
             print(f"ログイン失敗: {e}")
             return render_template("login.html", error="ログインに失敗しました。")
@@ -64,17 +70,15 @@ def login():
 @app.route("/dashboard")
 def dashboard():
     if 'user_id' in session:
-        return render_template("dashboard.html", user_id=session['user_id'])
+        return render_template("dashboard.html", user_id=session['user_id'], user_email=session['user_email'])
     else:
         return redirect(url_for('login'))
+
 
 # 🔹 スキルシート作成ページ
 @app.route("/skillsheet_input")
 def skillsheet_input():
     return render_template("skillsheet_input.html")
-
-if __name__ == "__main__":
-    app.run(debug=True)
 
 
 # 🔹 ログアウト処理
