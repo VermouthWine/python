@@ -70,7 +70,7 @@ def dashboard():
 
 # 🔹 スキルシート作成ページ
 @app.route("/skillsheet_input")
-def skill():
+def skillsheet_input():
     return render_template("skillsheet_input.html")
 
 if __name__ == "__main__":
