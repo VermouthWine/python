@@ -266,7 +266,8 @@ def profile_input():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        name = request.form.get("name")
+        last_name = request.form.get("last_name")
+        first_name = request.form.get("first_name")
         age = request.form.get("age")
         location = request.form.get("location")
         occupation = request.form.get("occupation")
@@ -284,6 +285,7 @@ def profile_input():
                 "education": education,
                 "certifications": certifications,
                 "bio": bio,
+                "initial": initial,  # イニシャルを追加
             }, on_conflict=["user_id"]).execute()
 
             if result.model_dump().get("error"):

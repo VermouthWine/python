@@ -1,46 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スキルシート入力</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skillsheet_input.css') }}">
-    
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>スキルシート入力</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/skillsheet_input.css') }}">
+        
+    </head>
 
-<body class="background-image">
-    
-    {% include "header.html" %}
+    <body class="background-image">
+        
+        {% include "header.html" %}
+            
 
-    
-    <h1>スキルシート入力フォーム</h1>
+        <div class="container">
 
-    {% if error %}<p class="error-message">{{ error }}</p>{% endif %}
+                
+            <h1>スキルシート入力フォーム</h1>
 
-    <form method="POST" action="/skillsheet_input">
-        {% for category_name, fields in categories.items() %}
-        <section class="section">
-            <h2 class="section-title">{{ category_name }}</h2>
-            <div class="language-select-group">
-                {% for field in fields %}
-                <div class="form-group">
-                    <label for="{{ field }}">{{ field.replace('_', ' ').title() }}</label>
-                    <select id="{{ field }}" name="{{ field }}">
-                        <option value="">-</option>
-                        {% for level in ['S', 'A', 'B', 'C', 'D'] %}
-                            <option value="{{ level }}" {% if skillsheet and skillsheet.get(field) == level %}selected{% endif %}>
-                                {{ level }} ({% if level == 'S' %}上級、教育可能{% elif level == 'A' %}中級、1人称対応可能{% elif level == 'B' %}業務経験あり{% elif level == 'C' %}知識のみ、研修レベル{% elif level == 'D' %}経験なし{% endif %})
-                            </option>
+                
+    <nav>
+        <ul>
+            <li><a href="#プログラミング言語">プログラミング言語</a></li>
+            <li><a href="#フレームワーク">フレームワーク</a></li>
+            <li><a href="#開発環境">開発環境</a></li>
+            <li><a href="#OS">OS</a></li>
+            <li><a href="#クラウド">クラウド</a></li>
+            <li><a href="#セキュリティ製品">セキュリティ製品</a></li>
+            <li><a href="#ネットワーク環境">ネットワーク環境</a></li>
+            <li><a href="#仮想基盤">仮想基盤</a></li>
+            <li><a href="#AI">AI</a></li>
+            <li><a href="#サーバーソフトウェア">サーバーソフトウェア</a></li>
+            <li><a href="#データベース">データベース</a></li>
+            <li><a href="#ツール類">ツール類</a></li>
+            <li><a href="#言語">言語</a></li>
+            <li><a href="#セキュリティ調査ツール">セキュリティ調査ツール</a></li>
+    </nav>
+
+            {% if error %}<p class="error-message">{{ error }}</p>{% endif %}
+
+            <form method="POST" action="/skillsheet_input">
+                {% for category_name, fields in categories.items() %}
+                <section class="section" id="{{ category_name.replace(' ', '_').replace('・', '_') }}">
+                    <h2 class="section-title">{{ category_name }}</h2>
+                    <div class="language-select-group">
+                        {% for field in fields %}
+                        <div class="form-group">
+                            <label for="{{ field }}">{{ field.replace('_', ' ').title() }}</label>
+                            <select id="{{ field }}" name="{{ field }}">
+                                <option value="">-</option>
+                                {% for level in ['S', 'A', 'B', 'C', 'D'] %}
+                                    <option value="{{ level }}" {% if skillsheet and skillsheet.get(field) == level %}selected{% endif %}>
+                                        {{ level }} ({% if level == 'S' %}上級、教育可能{% elif level == 'A' %}中級、1人称対応可能{% elif level == 'B' %}業務経験あり{% elif level == 'C' %}知識のみ、研修レベル{% elif level == 'D' %}経験なし{% endif %})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         {% endfor %}
-                    </select>
-                </div>
+                    </div>
+                </section>
                 {% endfor %}
-            </div>
-        </section>
-        {% endfor %}
 
-        <button type="submit">保存する</button>
-    </form>
-</body>
+                <button type="submit">保存する</button>
+            </form>
+        </div>
+    </body>
 </html>
