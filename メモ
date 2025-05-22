@@ -382,3 +382,76 @@ def dashboard():
         skillsheet=data["skillsheet"],
         projects=data["projects"]
     )
+
+
+
+
+
+@app.route("/update_email", methods=["GET", "POST"])
+def update_email():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == "POST":
+        new_email = request.form["new_email"]
+
+        try:
+            # ユーザー情報の更新
+            user = supabase.auth.update_user({
+                "email": new_email
+            })
+            return render_template("update_email.html", success="メールアドレスを更新しました。")
+        except Exception as e:
+            print(f"メールアドレスの更新失敗: {e}")
+            return render_template("update_email.html", error="メールアドレスの更新に失敗しました。")
+
+    return render_template("update_email.html")
+
+
+# パスワードリセット
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        try:
+            supabase.auth.reset_password_for_email(email)
+            return render_template(
+                "forgot_password.html",
+                success=f"{email} にリンクを送信しました。メールを確認してください。"
+            )
+        except Exception as e:
+            print(f"エラー: {e}")
+            return render_template(
+                "forgot_password.html",
+                error="送信に失敗しました。メールアドレスを確認してください。"
+            )
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    access_token = request.args.get('access_token')
+    
+    if not access_token:
+        flash('無効なリセットリンクです。')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        # パスワードが一致するか確認
+        if new_password != confirm_password:
+            flash('パスワードが一致しません。もう一度入力してください。')
+            return redirect(url_for('reset_password', access_token=access_token))
+
+        # Supabaseのパスワード更新
+        response = supabase.auth.api.update_user(access_token, {"password": new_password})
+        
+        if response.status_code == 200:
+            flash('パスワードのリセットが完了しました。')
+            return redirect(url_for('login'))
+        else:
+            flash('パスワードの更新に失敗しました。')
+    
+    return render_template('reset_password.html')

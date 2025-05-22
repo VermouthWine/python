@@ -1,31 +1,27 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_session import Session
 from datetime import datetime, timezone, timedelta
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import requests
-
+import json
 
 # 環境変数の読み込み
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-
 # Supabaseクライアントの作成
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 
 # Flaskの設定
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # セッション用のシークレットキー
 
-
-#  セッションの設定
+# セッションの設定
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)  # 15分操作なしで自動ログアウト
-
 
 # セッションの永続化を有効にする
 @app.before_request
@@ -35,20 +31,17 @@ def before_request():
         # セッションが存在している場合のみ更新
         session.modified = True
 
-
-#  セキュリティの強化設定
-app.config['SESSION_COOKIE_SECURE'] = False     # HTTPSのみでクッキー送信 localhost環境のため一時出来にflase
+# セキュリティの強化設定
+app.config['SESSION_COOKIE_SECURE'] = False     # HTTPSのみでクッキー送信 localhost環境のため一時false
 app.config['SESSION_COOKIE_HTTPONLY'] = True   # JavaScriptからのアクセスを防止
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # クロスサイトのCSRF防止
 
-
-#  ホームページ (ログインかサインアップを選ぶ画面)
+# ホームページ (ログインかサインアップを選ぶ画面)
 @app.route("/", methods=["GET"])
 def home():
     return render_template("home.html")
 
-
-#  サインアップページ & 処理
+# サインアップページ & 処理
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -65,8 +58,7 @@ def signup():
             return render_template("signup.html", error="サインアップに失敗しました。")
     return render_template("signup.html")
 
-
-#  ログインページ & ログイン処理
+# ログインページ & ログイン処理
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -90,63 +82,138 @@ def login():
             return render_template("login.html", error="ログインに失敗しました。")
     return render_template("login.html")
 
-
-@app.route("/update_email", methods=["GET", "POST"])
-def update_email():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == "POST":
-        new_email = request.form["new_email"]
-
-        try:
-            # ユーザー情報の更新
-            user = supabase.auth.update_user({
-                "email": new_email
-            })
-            return render_template("update_email.html", success="メールアドレスを更新しました。")
-        except Exception as e:
-            print(f"メールアドレスの更新失敗: {e}")
-            return render_template("update_email.html", error="メールアドレスの更新に失敗しました。")
-
-    return render_template("update_email.html")
-
-
-# パスワードリセットページ
-@app.route("/reset_password", methods=["GET", "POST"])
-def reset_password():
+# パスワードリセットリクエストページ（忘れた時）
+@app.route("/password_reset_request", methods=["GET", "POST"])
+def password_reset_request():
+    message = None
     if request.method == "POST":
         email = request.form.get("email")
+        access_token = request.args.get("access_token")
         try:
-            # Supabaseにパスワードリセットリンクをリクエスト
-            supabase.auth.reset_password_for_email(email)
-            return "パスワードリセットのリンクが送信されました。"
+            response = supabase.auth.reset_password_for_email(
+                email,
+                {
+                    "redirectTo": "http://localhost:5000/password_reset_redirect"
+                }
+            )
+            print(f"パスワードリセットメール送信成功: {response}")
+            message = f"{email} にパスワードリセット用のメールを送信しました。"
         except Exception as e:
-            print(f"エラー: {e}")
-            return "送信に失敗しました。"
-    return render_template("reset_password.html")
+            print(f"パスワードリセットメール送信失敗: {e}")
+            message = "メール送信に失敗しました。メールアドレスを確認してください。"
 
+    return render_template("password_reset_request.html", message=message)
+
+
+@app.route("/password_reset_redirect")
+def password_reset_redirect():
+    # 中間ページ。JavaScriptでハッシュからクエリに変換しリダイレクトするだけ
+    return render_template("password_reset_redirect.html")
+
+
+
+@app.route("/password_reset_form", methods=["GET", "POST"])
+def password_reset_form():
+    access_token = request.args.get("access_token")
+    type_ = request.args.get("type")
+
+    if request.method == "POST":
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+
+        if not new_password or not confirm_password:
+            return render_template("password_reset_form.html", error="すべての項目を入力してください。", access_token=access_token, type=type_)
+
+        if new_password != confirm_password:
+            return render_template("password_reset_form.html", error="パスワードが一致しません。", access_token=access_token, type=type_)
+
+        try:
+            # リカバリトークンでセッション確立
+            login_response = requests.post(
+                f"{SUPABASE_URL}/auth/v1/token?grant_type=recovery",
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Content-Type": "application/json"
+                },
+                json={"token": access_token}
+            )
+            login_response.raise_for_status()
+            tokens = login_response.json()
+            jwt = tokens["access_token"]
+
+            # JWT でパスワードを更新
+            update_response = requests.put(
+                f"{SUPABASE_URL}/auth/v1/user",
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {jwt}",
+                    "Content-Type": "application/json"
+                },
+                json={"password": new_password}
+            )
+            update_response.raise_for_status()
+
+            return redirect(url_for("login", message="パスワードが更新されました。ログインしてください。"))
+        except Exception as e:
+            print("パスワード更新失敗:", e)
+            return render_template("password_reset_form.html", error="パスワード更新に失敗しました。", access_token=access_token, type=type_)
+
+    return render_template("password_reset_form.html", access_token=access_token, type=type_)
+
+
+# メール変更ページ & 処理
+@app.route("/change_email", methods=["GET", "POST"])
+def change_email():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == "GET":
+        access_token = request.args.get("access_token")
+        return render_template("change_email.html", access_token=access_token)
+
+    if request.method == "POST":
+        new_email = request.form.get("new_email")
+        access_token = request.form.get("access_token")
+
+        if not access_token or not new_email:
+            return render_template("change_email.html", error="必要な情報が不足しています。", access_token=access_token)
+
+        supabase_with_token = create_client(SUPABASE_URL, SUPABASE_KEY)
+        supabase_with_token.auth.session = {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+
+        try:
+            response = supabase_with_token.auth.update_user({
+                "email": new_email
+            })
+            return render_template("change_email.html", success="確認メールを送信しました。新しいアドレスで確認してください。", access_token=access_token)
+        except Exception as e:
+            print("メール変更エラー:", e)
+            return render_template("change_email.html", error="メールアドレスの変更に失敗しました。", access_token=access_token)
 
 
 # 共通関数: Supabaseからデータを取得する
 def get_supabase_data(table_name, user_id, exclude_fields=None):
-    """
-    Supabaseからデータを取得し、指定されたフィールドを除外する。
-
-    :param table_name: Supabaseのテーブル名
-    :param user_id: ユーザーID
-    :param exclude_fields: 除外するフィールドのリスト（デフォルトは["user_id", "created_at", "updated_at"]）
-    :return: 取得したデータの辞書 or None
-    """
-    if exclude_fields is None:
-        exclude_fields = ["user_id", "created_at", "updated_at"]
+    try:
+        query = supabase.table(table_name).select("*").eq("user_id", user_id)
+        response = query.execute()
+        if exclude_fields:
+            # 除外フィールドを削除
+            for row in response.data:
+                for field in exclude_fields:
+                    row.pop(field, None)
+        return response.data
+    except Exception as e:
+        print(f"データ取得エラー: {e}")
+        return []
 
     try:
         response = supabase.table(table_name).select("*").eq("user_id", user_id).execute()
         print(f"{table_name} 取得結果:", response.data)
 
         if response.data and len(response.data) > 0:
-            # 不要なフィールドを除外したデータを返す
             return {
                 key: value for key, value in response.data[0].items()
                 if key not in exclude_fields and value
@@ -157,8 +224,7 @@ def get_supabase_data(table_name, user_id, exclude_fields=None):
         print(f"{table_name} 取得エラー:", e)
         return None
 
-
-#  ダッシュボード（ログイン後のページ）
+# ダッシュボード（ログイン後のページ）
 @app.route("/dashboard")
 def dashboard():
     if 'user_id' not in session:
@@ -167,18 +233,15 @@ def dashboard():
     user_id = session['user_id']
     user_email = session.get('user_email')
 
-    # 単一レコード取得用
     tables = {
         "profile": "profile",
         "skillsheet": "skillsheet",
     }
 
-    # データ取得
     data = {}
     for table_name, var_name in tables.items():
         data[var_name] = get_supabase_data(table_name, user_id)
 
-    # 複数レコードのprojectは個別取得
     try:
         response = supabase.table("project").select("*").eq("user_id", user_id).execute()
         print("project 取得結果:", response.data)
@@ -193,12 +256,10 @@ def dashboard():
         user_email=user_email,
         profile=data["profile"],
         skillsheet=data["skillsheet"],
-        projects=projects  # ← ここはリスト
+        projects=projects
     )
 
-
-
-#  プロフィール入力処理
+# プロフィール入力処理
 @app.route("/profile_input", methods=["GET", "POST"])
 def profile_input():
     if 'user_id' not in session:
@@ -213,10 +274,9 @@ def profile_input():
         certifications = request.form.get("certifications")
         bio = request.form.get("bio")
 
-        # supabaseのtableにデータを追加
         try:
             result = supabase.table("profile").upsert({
-                "user_id": session['user_id'],  # ユーザーID
+                "user_id": session['user_id'],
                 "name": name,
                 "age": age,
                 "location": location,
@@ -226,198 +286,104 @@ def profile_input():
                 "bio": bio,
             }, on_conflict=["user_id"]).execute()
 
-            # レスポンスのステータスコードを確認
             if result.model_dump().get("error"):
                 print("保存エラー:", result.error)
                 return render_template("profile_input.html", error="保存に失敗しました。")
 
-            # 成功の場合
             return redirect(url_for("dashboard"))
 
         except Exception as e:
-            # 例外処理
             print(f"エラー: {e}")
             return render_template("profile_input.html", error="予期せぬエラーが発生しました。")
 
-    # GET時：既存データを取得してフォームに反映
     user_id = session['user_id']
     profile_data = get_supabase_data("profile", user_id) or {}
-    # 取得したデータをフォームに表示
     return render_template("profile_input.html", profile=profile_data)
-            
 
-
-    
-
-
-#  スキルシート作成ページ & 処理
+# スキルシート作成ページ & 処理
 @app.route("/skillsheet_input", methods=["GET", "POST"])
 def skillsheet_input():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     categories = {
-        "プログラミング言語": ["python", "ruby", "javascript", "shell", "c", "c++", "c#", "java", "html", "go", "css", "swift", "kotlin", "vba"],
-        "フレームワーク": ["ruby_on_rails", "django", "flask", "laravel", "symfony", "cakephp", "php", "next_js", "nuxt_js", "vue_js", "spring_boot", "bottle", "react"],
-        "開発環境": ["vscode", "eclipse", "pycharm", "jupyter_notebook", "android_studio", "atom", "xcode", "webstorm", "netbeans", "visual_studio"],
-        "OS": ["windows", "windows_server", "macos", "linux", "unix", "solaris", "android", "ios", "chromeos", "centos", "ubuntu", "ms_dos", "watchos", "wear_os", "raspberrypi_os", "oracle_solaris", "z/os", "firefox_os", "blackberryos", "rhel", "kali_linux", "parrot_os", "whonix"],
-        "クラウド": ["aws", "azure", "gcp", "oci"],
-        "セキュリティ製品": ["splunk", "microsoft_sentinel", "microsoft_defender_for_endpoint", "cybereason", "crowdstrike_falcon", "vectra", "exabeam", "sep(symantecendpointprotection)", "tanium", "logstorage", "trellix", "fireeye_nx", "fireeye_hy", "fireeye_cm", "ivanti", "f5_big_ip", "paloalto_prisma", "tenable"],
-        "ネットワーク環境": ["cisco_catalyst", "cisco_meraki", "cisco_nexus", "cisco_others", "allied_switch", "allied_others", "nec_ip8800_series", "nec_ix_series", "yamaha_rtx/nvr", "hpe_aruba_switch", "fortinet_fortiswitch", "fortinet_fortogate", "paloalto_pa_series", "panasonic_switch", "media_converter", "wireless_network", "other_network_devices"],
-        "仮想化基盤": ["vmware_vsphere", "vmware_workstaion", "oracle_virtualbox", "vmware_fusion", "microsoft_hyper_v", "kvm(kernel_based_virtual_machine)", "docker", "kubernetes"],
-        "AI": ["gemini", "chatgpt", "copilot", "perplexity", "grok", "azure_openai"],
-        "サーバソフトウェア": ["apache_http_server", "nginx", "iis", "apache_tomcat", "oracle_weblogic", "adobe_coldfusion", "wildfly", "websphere", "jetty", "glassfish", "squid", "varnish", "sendmail", "postfix"],
-        "データベース": ["mysql", "oracle", "postgresql", "sqlite", "mongodb", "casandra", "microsoft_sql_server", "amazon_aurora", "mariadb", "redis", "dynamodb", "elasticsearch", "amazon_rds"],
-        "ツール類": ["wireshark", "owasp_zap", "burp_suite", "nessus", "openvas", "tera_term", "powershell", "cmd", "winscp", "tor", "kintone", "jira", "confluence", "servicenow", "sakura_editor", "power_automate", "automation_anywhere", "active_directory", "sap_erp", "salesforce"],
-        "言語": ["english", "chinese", "korean", "tagalog", "german", "spanish", "italian", "russian", "portugese", "french", "lithuanian", "malay", "romanian"],
-        "セキュリティ調査ツール": ["shodan", "censys", "greynoise", "ibm_x_force", "urlsan.io", "abuselpdb", "virustotal", "cyberchef", "any.run", "hybrid_analysis", "wappalyzer", "wireshark"]
+        "プログラミング言語": ["python", "ruby", "javascript", "shell", "c", "c++", "c#", "java", "html", "go", "css", "swift", "kotlin", "sql"],
+        "フレームワーク": ["flask", "rails", "vue", "react", "express", "springboot", "django", "nextjs", "nuxt", "svelte"],
+        "ミドルウェア": ["nginx", "apache", "mysql", "postgresql", "redis", "mongodb", "elasticsearch", "rabbitmq", "docker", "kubernetes", "terraform", "prometheus", "grafana", "fluentd"],
+        "インフラ": ["aws", "azure", "gcp", "oci", "linux", "windows", "vmware", "hyper-v", "ansible", "chef", "puppet", "jenkins", "gitlabci", "circleci", "githubactions", "terraform"]
     }
 
-    skillsheet_data = get_supabase_data("skillsheet", session['user_id'])
-
     if request.method == "POST":
-        data = {field: request.form.get(field) for fields in categories.values() for field in fields}
-        data["user_id"] = session['user_id']
-        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        skillsheet_data = {}
+        for category, skills in categories.items():
+            for skill in skills:
+                skillsheet_data[skill] = True if request.form.get(skill) == "on" else False
 
-        result = supabase.table("skillsheet").upsert(data, on_conflict=["user_id"]).execute()
-        if result.model_dump().get("error"):
-            return render_template("skillsheet_input.html", categories=categories, skillsheet=skillsheet_data, error="保存に失敗しました")
+        try:
+            result = supabase.table("skillsheet").upsert(
+                {"user_id": session['user_id'], **skillsheet_data},
+                on_conflict=["user_id"]
+            ).execute()
 
-        return redirect(url_for("dashboard"))
+            if result.model_dump().get("error"):
+                return render_template("skillsheet_input.html", categories=categories, error="保存に失敗しました。")
 
+            return redirect(url_for("dashboard"))
+
+        except Exception as e:
+            print(f"スキル保存エラー: {e}")
+            return render_template("skillsheet_input.html", categories=categories, error="予期せぬエラーが発生しました。")
+
+    # GET時は既存データ取得
+    skillsheet_data = get_supabase_data("skillsheet", session['user_id']) or {}
     return render_template("skillsheet_input.html", categories=categories, skillsheet=skillsheet_data)
-  
 
-
-
-
-
-
-
-# プロジェクト入力ページ & 処理
+# プロジェクト入力処理
 @app.route("/project_input", methods=["GET", "POST"])
 def project_input():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     if request.method == "POST":
-        name = request.form.get("name")
-        description = request.form.get("description")
-        start_at = request.form.get("start_at")
-        end_at = request.form.get("end_at")
+        project_name = request.form.get("project_name")
+        start_date = request.form.get("start_date")
+        end_date = request.form.get("end_date")
         role = request.form.get("role")
-        technologies = request.form.getlist("technologies")
+        responsibilities = request.form.get("responsibilities")
+        achievements = request.form.get("achievements")
+        tools = request.form.get("tools")
+        technologies = request.form.get("technologies")
 
         try:
-            # Supabaseのテーブルにプロジェクトデータを保存
-            result = supabase.table("project").insert({
+            result = supabase.table("project").insert([{
                 "user_id": session['user_id'],
-                "name": name,
-                "description": description,
-                "start_at": start_at,
-                "end_at": end_at,
+                "project_name": project_name,
+                "start_date": start_date,
+                "end_date": end_date,
                 "role": role,
+                "responsibilities": responsibilities,
+                "achievements": achievements,
+                "tools": tools,
                 "technologies": technologies,
-            }).execute()
+            }]).execute()
 
             if result.model_dump().get("error"):
-                print("保存エラー:", result.error)
-                return render_template("project_input.html", error="プロジェクトの保存に失敗しました。")
+                return render_template("project_input.html", error="保存に失敗しました。")
 
             return redirect(url_for("dashboard"))
 
         except Exception as e:
-            print(f"エラー: {e}")
+            print(f"プロジェクト保存エラー: {e}")
             return render_template("project_input.html", error="予期せぬエラーが発生しました。")
 
     return render_template("project_input.html")
 
-
-# プロジェクト削除ページ
-@app.route("/project_delete/<project_id>", methods=["POST"])
-def project_delete(project_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    try:
-        result = supabase.table("project").delete().eq("id", project_id).eq("user_id", session['user_id']).execute()
-
-        if result.model_dump().get("error"):
-            print("削除エラー:", result.error)
-            return redirect(url_for("dashboard", error="削除に失敗しました。"))
-
-        return redirect(url_for("dashboard"))
-
-    except Exception as e:
-        print("削除例外:", e)
-        return redirect(url_for("dashboard"))
-
-
-
-# プロジェクト編集ページ
-@app.route("/project_edit/<project_id>", methods=["GET", "POST"])
-def project_edit(project_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == "POST":
-        name = request.form.get("name")
-        description = request.form.get("description")
-        start_at = request.form.get("start_at")
-        if start_at == "":
-                start_at = None
-
-        end_at = request.form.get("end_at")
-        if end_at == "":
-                end_at = None
-        role = request.form.get("role")
-        technologies= request.form.get("technologies")
-        
-
-        try:
-            result = supabase.table("project").update({
-                "name": name,
-                "description": description,
-                "start_at": start_at,
-                "end_at": end_at,
-                "role": role,
-                "technologies": technologies,
-            }).eq("id", project_id).eq("user_id", session['user_id']).execute()
-
-            return redirect(url_for("dashboard"))
-
-        except Exception as e:
-            print("更新エラー:", e)
-            return render_template("project_edit.html", error="更新に失敗しました。")
-
-    else:
-        try:
-            response = supabase.table("project").select("*").eq("id", project_id).eq("user_id", session['user_id']).single().execute()
-            project = response.data
-
-            if not project:
-                return redirect(url_for("project_edit"))
-
-            return render_template("project_edit.html", project=project)
-
-        except Exception as e:
-            print("取得エラー:", e)
-            return redirect(url_for("project_edit"))
-
-
-
-
-    
-
-
-#  ログアウト処理
+# ログアウト処理
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for('home'))
+    return redirect(url_for("login"))
 
 
-# アプリの実行
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
