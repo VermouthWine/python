@@ -1,11 +1,18 @@
+<<<<<<< HEAD
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_session import Session
 from datetime import datetime, timezone, timedelta
+=======
+from flask import Flask, render_template, request, redirect, url_for, session
+>>>>>>> 7dd81ee9010f7e584d25caddb96635e5f34f2fb6
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import requests
+<<<<<<< HEAD
 import json
+=======
+>>>>>>> 7dd81ee9010f7e584d25caddb96635e5f34f2fb6
 
 # 環境変数の読み込み
 load_dotenv()
@@ -19,6 +26,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # セッション用のシークレットキー
 
+<<<<<<< HEAD
 # セッションの設定
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)  # 15分操作なしで自動ログアウト
@@ -37,11 +45,20 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True   # JavaScriptからのアクセス
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # クロスサイトのCSRF防止
 
 # ホームページ (ログインかサインアップを選ぶ画面)
+=======
+
+# 🔹 ホームページ (ログインかサインアップを選ぶ画面)
+>>>>>>> 7dd81ee9010f7e584d25caddb96635e5f34f2fb6
 @app.route("/", methods=["GET"])
 def home():
     return render_template("home.html")
 
+<<<<<<< HEAD
 # サインアップページ & 処理
+=======
+
+# 🔹 サインアップページ & 処理
+>>>>>>> 7dd81ee9010f7e584d25caddb96635e5f34f2fb6
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -58,7 +75,12 @@ def signup():
             return render_template("signup.html", error="サインアップに失敗しました。")
     return render_template("signup.html")
 
+<<<<<<< HEAD
 # ログインページ & ログイン処理
+=======
+
+# 🔹 ログインページ & ログイン処理
+>>>>>>> 7dd81ee9010f7e584d25caddb96635e5f34f2fb6
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -82,6 +104,7 @@ def login():
             return render_template("login.html", error="ログインに失敗しました。")
     return render_template("login.html")
 
+<<<<<<< HEAD
 # パスワードリセットリクエストページ（忘れた時）
 @app.route("/password_reset_request", methods=["GET", "POST"])
 def password_reset_request():
@@ -389,3 +412,31 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+=======
+
+# 🔹 ダッシュボード（ログイン後のページ）
+@app.route("/dashboard")
+def dashboard():
+    if 'user_id' in session:
+        return render_template("dashboard.html", user_id=session['user_id'], user_email=session['user_email'])
+    else:
+        return redirect(url_for('login'))
+
+
+# 🔹 スキルシート作成ページ
+@app.route("/skillsheet_input")
+def skillsheet_input():
+    return render_template("skillsheet_input.html")
+
+
+# 🔹 ログアウト処理
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
+
+# アプリの実行
+if __name__ == "__main__":
+    app.run(debug=True)
+>>>>>>> 7dd81ee9010f7e584d25caddb96635e5f34f2fb6
